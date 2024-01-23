@@ -68,38 +68,78 @@ export async function fetchThreads(pageNumber = 1, pageSize = 20) {
   return { threads, isNext };
 }
 
-export async function fetchThreadById(id : string) {
+export async function fetchThreadById(id: string) {
   connectToDB();
   try {
-    const thread = await Thread.findById(id).populate({
-      path : "author",
-      model : User ,
-      select : "_id name image id"
-    })
-    .populate({
-      path : 'children',
-      populate : [{
-        path : "author",
-        model : User,
-      select : "_id name image id parentId "
+    const thread = await Thread.findById(id)
+      .populate({
+        path: "author",
+        model: User,
+        select: "_id name image id",
+      })
+      .populate({
+        path: "children",
+        populate: [
+          {
+            path: "author",
+            model: User,
+            select: "_id name image id parentId ",
+          },
 
-      },
+          {
+            path: "children",
+            model: Thread,
+            populate: {
+              path: "author",
+              model: User,
+              select: "_id name image id parentId ",
+            },
+          },
+        ],
+      })
+      .exec();
 
-      {
-        path : "children" ,
-        model : Thread ,
-        populate : {
-          path : "author",
-        model : User,
-      select : "_id name image id parentId "
-        }
-      }
-    
-    ]
-    }).exec()
-
-    return thread
+    return thread;
   } catch (error: any) {
+    throw new Error(`failed to create fetch  thread by id ${error.message}`);
+  }
+}
+
+interface AddCommentParams {
+  threadId  : string ;
+  userId :string ;
+  commentText : string ;
+  path : string;
+}
+
+export async function addCommentToThread({
+  threadId,
+  commentText,
+  userId,
+  path,
+}: AddCommentParams) {
+  connectToDB()
+
+  try{
+      const originalThread = await Thread.findById(threadId)
+      if (!originalThread) throw new Error('thread is not fount')
+
+    const commentThread = new Thread({
+      text : commentText ,
+      author : userId ,
+      parentId : threadId ,
+    })
+
+
+    const savedCommentThread = await commentThread.save()
+
+    originalThread.children.push(savedCommentThread._id)
+
+    await originalThread.save()
+
+    revalidatePath(path)
+
+  }catch (error: any) {
     throw new Error(`failed to create fetch  thread by id ${error.message}`);
   }
 }
