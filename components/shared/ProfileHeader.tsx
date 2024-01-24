@@ -6,10 +6,11 @@ interface Props {
   name: string;
   image: string;
   bio: string;
-  username : string
+  username : string;
+  type? : "User" | "Community"
 }
 
-const ProfileHeader = ({ accountId, username ,  authUserId, name, image, bio }: Props) => {
+const ProfileHeader = ({ accountId, username ,  authUserId, name, image, bio , type }: Props) => {
   return <div className = "flex w-full flex-col justify-start" >
     <div className="flex  items-center justify-between">
         <div className="flex items-center gap-3">

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { usePathname, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import { useOrganization } from "@clerk/nextjs";
 import {
   Form,
   FormControl,
@@ -15,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -27,6 +26,7 @@ import { createThread } from "@/lib/actions/thread.actions";
 const PostThread = ({userId}: { userId: string }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const organization = useOrganization()
   const form = useForm({
     resolver: zodResolver(ThreadValidation),
     defaultValues: {
@@ -35,15 +35,15 @@ const PostThread = ({userId}: { userId: string }) => {
     },
   });
 
-
   const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
-    await createThread({
-      text: values.thread,
-      author: userId,
-      communityId:null ,
-      path: pathname,
+    console.log('org'  , organization)
+      await createThread({
+        text: values.thread,
+        author: userId,
+        communityId:  organization ? organization.organization.id  : null   ,
+        path: pathname,
     });
-
+  
     router.push("/");
   };
 
